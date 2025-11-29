@@ -217,7 +217,7 @@ GEMINI_API_KEY=your_gemini_api_key
 This project is licensed under the MIT License.
 
 ## 👥 Authors
-- [@DumAI-hub](https://github.com/DumAI-hub)]
+- [@DumAI-hub](https://github.com/DumAI-hub)
 - [@mauryaabha991-arch](https://github.com/mauryaabha991-arch)
 - @Sajeed-ahmed
 - @rehana-debbarma
