@@ -1,0 +1,23 @@
+{
+  "name": "cardiovascular-health-app",
+  "version": "1.0.0",
+  "description": "AI-powered cardiovascular disease risk assessment",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && node server.js",
+    "dev:ml": "cd ml_service && python app.py",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "start": "echo 'Run dev:frontend, dev:backend, and dev:ml in separate terminals'"
+  },
+  "keywords": [
+    "cardiovascular",
+    "health",
+    "ai",
+    "machine-learning",
+    "prediction"
+  ],
+  "author": "mauryaabha991-arch",
+  "license": "MIT"
+}
