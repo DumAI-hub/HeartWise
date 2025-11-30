@@ -1,9 +1,9 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "ml_service/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "cd ml_service && python app.py"
+startCommand = "python app.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
