@@ -138,12 +138,13 @@ async def health():
     """Health check with model status"""
     return {
         "status": "healthy",
-        "models": {
-            "model1_catboost": "model1" in MODELS,
-            "model2_lightgbm": "model2" in MODELS,
-            "model3_randomforest": "model3" in MODELS,
-            "stacking_loaded": "stacking" in MODELS
-        }
+        "server running on port" : os.getenv("ML_SERVICE_PORT", "8000"),
+        # "models": {
+        #     "model1_catboost": "model1" in MODELS,
+        #     "model2_lightgbm": "model2" in MODELS,
+        #     "model3_randomforest": "model3" in MODELS,
+        #     "stacking_loaded": "stacking" in MODELS
+        # }
     }
 
 @app.post("/predict", response_model=PredictionResponse)

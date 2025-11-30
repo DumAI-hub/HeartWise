@@ -413,7 +413,14 @@ app.post("/api/predictAndSave", async (req, res) => {
 // ============================================
 // History Endpoints
 // ============================================
-
+// Health check endpoint for Railway
+app.get('/api/test', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        message: 'Backend server is running',
+        timestamp: new Date().toISOString()
+    });
+});
 // Get user_cd by username
 app.get("/api/getUserCd", (req, res) => {
   const { username } = req.query;
