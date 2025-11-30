@@ -14,16 +14,66 @@ dotenv.config();
 const app = express();
 
 // Configure CORS to allow frontend requests
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL, /\.vercel\.app$/]
-  : true;
+const allowedOrigins = [];
+
+if (process.env.NODE_ENV === 'production') {
+  // Production: Allow specific origins
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+    console.log('[INFO] Added FRONTEND_URL to CORS:', process.env.FRONTEND_URL);
+  }
+  // Also allow any Vercel deployment
+  allowedOrigins.push(/\.vercel\.app$/);
+  // Allow Railway frontend if exists
+  allowedOrigins.push(/\.railway\.app$/);
+  
+  console.log('[INFO] CORS allowed origins (production)');
+} else {
+  // Development: Allow localhost
+  allowedOrigins.push('http://localhost:5173');
+  allowedOrigins.push('http://localhost:5174');
+  allowedOrigins.push('http://127.0.0.1:5173');
+  
+  console.log('[INFO] CORS allowed origins (development)');
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    console.log('[INFO] CORS request from origin:', origin);
+    
+    // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+    if (!origin) {
+      console.log('[INFO] No origin header - allowing request');
+      return callback(null, true);
+    }
+    
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed) {
+      console.log('[INFO] CORS allowed for origin:', origin);
+      callback(null, true);
+    } else {
+      console.log('[WARNING] CORS blocked origin:', origin);
+      console.log('[WARNING] Allowed origins:', allowedOrigins);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['set-cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Add OPTIONS handler for preflight requests
+app.options('*', cors());
 
 app.use(bodyParser.json());
 
@@ -32,13 +82,18 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Trust Railway proxy
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // true in production (HTTPS)
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // for cross-site cookies in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Must be 'none' for cross-site
+    domain: undefined // Don't set domain for cross-origin cookies
   }
 }));
+
+console.log('[INFO] Session configured with secure:', process.env.NODE_ENV === 'production');
+console.log('[INFO] Session sameSite:', process.env.NODE_ENV === 'production' ? 'none' : 'lax');
 
 // MySQL Connection
 const db = mysql.createConnection({
