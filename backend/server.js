@@ -291,12 +291,12 @@ app.post("/api/register", (req, res) => {
 // NEW: Prediction & Advice Endpoint
 // ============================================
 app.post("/api/predictAndSave", async (req, res) => {
-  const { username, password, healthFeatures } = req.body;
+  const { username, healthFeatures } = req.body;
 
-  if (!username || !password || !healthFeatures) {
+  if (!username || !healthFeatures) {
     return res.status(400).json({
       success: false,
-      message: "Missing username, password, or health data",
+      message: "Missing username or health data",
     });
   }
 
@@ -329,7 +329,7 @@ app.post("/api/predictAndSave", async (req, res) => {
       });
     };
 
-    // Get or create user
+    // Get user_cd from username
     const checkQuery = "SELECT user_cd FROM users WHERE username = ?";
     const userResult = await queryAsync(checkQuery, [username]);
 
@@ -338,21 +338,35 @@ app.post("/api/predictAndSave", async (req, res) => {
     if (userResult.length > 0) {
       user_cd = userResult[0].user_cd;
     } else {
-      const insertUserQuery = "INSERT INTO users (username, password) VALUES (?, ?)";
-      const newUserResult = await queryAsync(insertUserQuery, [username, password]);
-      user_cd = newUserResult.insertId;
+      return res.status(404).json({
+        success: false,
+        message: "User not found. Please login first."
+      });
     }
 
     // Step 1: Run ML prediction
     const prediction = await predictRisk(allFeatures);
 
-    // Step 2: Generate AI advice
+    // Step 2: Fetch previous health records for context
+    const previousRecordsQuery = `
+      SELECT age_years, bmi, ap_hi, ap_lo, risk_label, stacked_probability, recorded_at
+      FROM health_features
+      WHERE user_cd = ?
+      ORDER BY recorded_at DESC
+      LIMIT 1
+    `;
+    
+    const previousRecords = await queryAsync(previousRecordsQuery, [user_cd]);
+    const previousRecord = previousRecords.length > 0 ? previousRecords[0] : null;
+
+    // Step 3: Generate AI advice with historical context
     const adviceText = await generateAdvice({
       features: allFeatures,
-      prediction
+      prediction,
+      previousRecord
     });
 
-    // Step 3: Save to database with prediction results
+    // Step 4: Save to database with prediction results
     const healthQuery = `
       INSERT INTO health_features
       (user_cd, age_years, gender, height, weight, ap_hi, ap_lo, cholesterol, gluc,

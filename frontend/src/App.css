@@ -1598,31 +1598,37 @@ body {
 .suggestions-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
   position: relative;
   z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .suggestions-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .suggestions-title {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 700;
   color: white;
   margin-bottom: 0.5rem;
+  word-wrap: break-word;
 }
 
 .suggestions-subtitle {
-  font-size: 1.1rem;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
   color: #94a3b8;
+  word-wrap: break-word;
 }
 
 .suggestions-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .suggestions-sidebar {
@@ -1630,11 +1636,13 @@ body {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   height: fit-content;
   position: sticky;
   top: 100px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
 }
 
 .sidebar-title {
@@ -1648,14 +1656,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  overflow-x: hidden;
 }
 
 .sidebar-item {
-  padding: 1rem;
+  padding: 0.875rem;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 2px solid transparent;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .sidebar-item:hover {
@@ -1700,8 +1711,11 @@ body {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .advice-header {
@@ -1757,11 +1771,24 @@ body {
 }
 
 .advice-content {
-  padding: 1.5rem;
+  padding: 1.25rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   border-left: 4px solid #667eea;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.advice-text {
+  color: #e2e8f0;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .health-metrics {
@@ -1769,20 +1796,23 @@ body {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .health-metrics h3 {
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   font-weight: 700;
   color: white;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
 }
 
@@ -2001,21 +2031,107 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
+  .suggestions-container {
+    padding: 1rem;
+  }
+
   .suggestions-layout {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .suggestions-sidebar {
     position: relative;
     top: 0;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .sidebar-list {
     flex-direction: row;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 0.5rem;
+  }
+
+  .sidebar-list::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .sidebar-list::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 3px;
   }
 
   .sidebar-item {
     min-width: 150px;
+    flex-shrink: 0;
+  }
+
+  .advice-card {
+    padding: 1.25rem;
+  }
+
+  .health-metrics {
+    padding: 1.25rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .suggestions-container {
+    padding: 0.75rem;
+  }
+
+  .suggestions-header {
+    margin-bottom: 1rem;
+  }
+
+  .advice-card,
+  .health-metrics {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .advice-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .advice-icon {
+    font-size: 2.5rem;
+  }
+
+  .advice-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .risk-summary {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .advice-content {
+    padding: 1rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .metric-item {
+    padding: 0.875rem;
+  }
+
+  .sidebar-list {
+    gap: 0.5rem;
   }
 }

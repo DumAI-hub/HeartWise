@@ -5,25 +5,25 @@
 
 /**
  * Generate personalized health advice based on risk prediction
- * @param {Object} params - { features, prediction }
+ * @param {Object} params - { features, prediction, previousRecord }
  * @returns {Promise<string>} - AI-generated advice text
  */
-async function generateAdvice({ features, prediction }) {
+async function generateAdvice({ features, prediction, previousRecord = null }) {
   // 1. Clean the key (trim whitespace)
   const apiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
   
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     console.warn('⚠️  GEMINI_API_KEY not configured, using placeholder advice');
-    return generatePlaceholderAdvice({ features, prediction });
+    return generatePlaceholderAdvice({ features, prediction, previousRecord });
   }
 
-  const prompt = buildPrompt({ features, prediction });
+  const prompt = buildPrompt({ features, prediction, previousRecord });
   
   console.log('🤖 Calling Gemini API for health advice...');
 
   try {
-    // 2. UPDATED URL: Changed 'gemini-1.5-flash' to 'gemini-1.5-flash-001'
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${apiKey}`;
+    // Use the correct model name: gemini-1.5-flash-latest
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -38,7 +38,9 @@ async function generateAdvice({ features, prediction }) {
         }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 300,
+          maxOutputTokens: 10000000,
+          topP: 0.95,
+          topK: 40
         }
       })
     });
@@ -46,14 +48,35 @@ async function generateAdvice({ features, prediction }) {
     if (!response.ok) {
       const errorText = await response.text();
       // Log the full error text to help debugging
+      console.error('Gemini API Response:', errorText);
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     
-    const adviceText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Debug: Log the full response structure
+    console.log('Gemini API Response:', JSON.stringify(data, null, 2));
+    
+    // Try to extract text from different possible response formats
+    let adviceText = null;
+    
+    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      adviceText = data.candidates[0].content.parts[0].text;
+    } else if (data.candidates?.[0]?.text) {
+      adviceText = data.candidates[0].text;
+    } else if (data.text) {
+      adviceText = data.text;
+    }
     
     if (!adviceText) {
+      const finishReason = data.candidates?.[0]?.finishReason;
+      console.error('Finish Reason:', finishReason);
+      console.error('Response structure:', JSON.stringify(data, null, 2));
+      
+      if (finishReason === 'MAX_TOKENS') {
+        throw new Error('Response truncated: MAX_TOKENS reached. Increase maxOutputTokens.');
+      }
+      
       throw new Error('Invalid response format from Gemini API');
     }
     
@@ -63,52 +86,84 @@ async function generateAdvice({ features, prediction }) {
   } catch (error) {
     console.error('❌ Gemini API error:', error.message);
     console.warn('⚠️  Falling back to placeholder advice');
-    return generatePlaceholderAdvice({ features, prediction });
+    return generatePlaceholderAdvice({ features, prediction, previousRecord });
   }
 }
 
 /**
  * Build prompt for LLM based on user features and prediction
- * @param {Object} params - { features, prediction }
+ * @param {Object} params - { features, prediction, previousRecord }
  * @returns {string} - Formatted prompt
  */
-function buildPrompt({ features, prediction }) {
+function buildPrompt({ features, prediction, previousRecord = null }) {
   const { age_years, bmi, ap_hi, ap_lo, cholesterol, gluc, smoke, alco, ACTIVE } = features;
   const { probability, label } = prediction.stacked;
 
-  return `You are a cardiovascular health advisor. Based on the following patient data, provide a brief, compassionate summary and lifestyle recommendations.
+  let prompt = `You are a health advisor. Patient: ${age_years}yo, BMI ${bmi.toFixed(1)}, BP ${ap_hi}/${ap_lo}, Chol=${cholesterol}, Gluc=${gluc}, Smoke=${smoke ? 'Yes' : 'No'}, Alcohol=${alco ? 'Yes' : 'No'}, Active=${ACTIVE ? 'Yes' : 'No'}.
 
-Patient Profile:
-- Age: ${age_years} years
-- BMI: ${bmi.toFixed(1)} kg/m²
-- Blood Pressure: ${ap_hi}/${ap_lo} mmHg
-- Cholesterol Level: ${cholesterol} (scale 1-3)
-- Glucose Level: ${gluc} (scale 1-3)
-- Smoking: ${smoke ? 'Yes' : 'No'}
-- Alcohol: ${alco ? 'Yes' : 'No'}
-- Physical Activity: ${ACTIVE ? 'Yes' : 'No'}
+CVD Risk: ${label} (${(probability * 100).toFixed(1)}%).`;
 
-Risk Assessment:
-- Cardiovascular Disease Risk: ${label} (${(probability * 100).toFixed(1)}%)
+  // Add historical context if available
+  if (previousRecord) {
+    const prevDate = new Date(previousRecord.recorded_at).toLocaleDateString();
+    const bmiChange = (bmi - previousRecord.bmi).toFixed(1);
+    const bpChange = (ap_hi - previousRecord.ap_hi);
+    const riskChange = label !== previousRecord.risk_label;
+    
+    prompt += `\n\nPrevious Record (${prevDate}): BMI ${previousRecord.bmi.toFixed(1)}, BP ${previousRecord.ap_hi}/${previousRecord.ap_lo}, Risk: ${previousRecord.risk_label} (${(previousRecord.stacked_probability * 100).toFixed(1)}%).
 
-Please provide:
-1. A brief summary of the risk factors (2-3 sentences)
-2. 3-4 specific lifestyle recommendations
-3. A reminder to consult with a healthcare provider
+Changes: BMI ${bmiChange > 0 ? '+' : ''}${bmiChange}, BP ${bpChange > 0 ? '+' : ''}${bpChange}/${(ap_lo - previousRecord.ap_lo)}${riskChange ? `, Risk changed from ${previousRecord.risk_label} to ${label}` : ''}.`;
+  }
 
-Keep the tone supportive and actionable. Limit response to 150 words.`;
+  prompt += `\n\nProvide in 200 words:
+1. ${previousRecord ? 'Progress assessment and current status' : 'Brief risk assessment'} (2 sentences)
+2. Top 3 specific ${previousRecord ? 'next steps based on progress' : 'lifestyle changes'}
+3. When to see a doctor
+
+Be supportive and actionable.`;
+
+  return prompt;
 }
 
 /**
  * Generate placeholder advice when Gemini API is not configured
- * @param {Object} params - { features, prediction }
+ * @param {Object} params - { features, prediction, previousRecord }
  * @returns {string} - Placeholder advice text
  */
-function generatePlaceholderAdvice({ features, prediction }) {
+function generatePlaceholderAdvice({ features, prediction, previousRecord = null }) {
   const { age_years, bmi, ap_hi, smoke, ACTIVE } = features;
   const { probability, label } = prediction.stacked;
 
   let advice = `At ${age_years} years old, your cardiovascular disease risk is assessed as ${label} (${(probability * 100).toFixed(1)}% probability).\n\n`;
+
+  // Add progress comparison if previous record exists
+  if (previousRecord) {
+    const prevDate = new Date(previousRecord.recorded_at).toLocaleDateString();
+    const daysSince = Math.floor((new Date() - new Date(previousRecord.recorded_at)) / (1000 * 60 * 60 * 24));
+    
+    advice += `📊 Progress Since ${prevDate} (${daysSince} days ago):\n`;
+    
+    // BMI comparison
+    const bmiChange = bmi - previousRecord.bmi;
+    if (Math.abs(bmiChange) > 0.5) {
+      advice += `• BMI: ${previousRecord.bmi.toFixed(1)} → ${bmi.toFixed(1)} (${bmiChange > 0 ? '+' : ''}${bmiChange.toFixed(1)}) ${bmiChange < 0 ? '✅' : '⚠️'}\n`;
+    }
+    
+    // Blood pressure comparison
+    const bpChange = ap_hi - previousRecord.ap_hi;
+    if (Math.abs(bpChange) > 5) {
+      advice += `• Blood Pressure: ${previousRecord.ap_hi}/${previousRecord.ap_lo} → ${ap_hi}/${features.ap_lo} (${bpChange > 0 ? '+' : ''}${bpChange}) ${bpChange < 0 ? '✅' : '⚠️'}\n`;
+    }
+    
+    // Risk level comparison
+    if (label !== previousRecord.risk_label) {
+      const riskImproved = (label === 'Low' && previousRecord.risk_label !== 'Low') || 
+                          (label === 'Moderate' && previousRecord.risk_label === 'High');
+      advice += `• Risk Level: ${previousRecord.risk_label} → ${label} ${riskImproved ? '✅' : '⚠️'}\n`;
+    }
+    
+    advice += '\n';
+  }
 
   // Risk factors
   const riskFactors = [];
