@@ -4,11 +4,34 @@ AI-powered cardiovascular disease risk assessment with personalized health insig
 
 **✨ Production-Ready** | Configured for **Vercel + Railway** deployment
 
+## 🚀 Railway Deployment (Production)
+
+**Quick Setup**: See [RAILWAY_QUICK_SETUP.md](RAILWAY_QUICK_SETUP.md) for 5-minute deployment guide
+
+**Full Documentation**: See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for complete setup instructions
+
+### Key Features
+- ✅ **Automatic Database Migrations** - Schema created on first startup
+- ✅ **Persistent DB Connection** - Never closed after migrations
+- ✅ **Graceful Model Loading** - Service continues with partial models
+- ✅ **6 ML Models** - All included in repository (196MB)
+- ✅ **Clean Logging** - Professional format for production
+- ✅ **Health Checks** - Automated monitoring endpoints
+
+### Deployment Architecture
+```
+Frontend (Vercel) → Backend (Railway) → MySQL (Railway)
+                         ↓
+                   ML Service (Railway)
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
 just_checking/
-├── frontend/              # React + Vite frontend (→ Vercel)
+├── frontend/                    # React + Vite frontend (→ Vercel)
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
@@ -16,34 +39,48 @@ just_checking/
 │   ├── public/
 │   ├── package.json
 │   ├── vite.config.js
-│   ├── vercel.json       # Vercel configuration
-│   └── .env.production   # Production environment variables
-├── backend/              # Node.js + Express API (→ Railway)
-│   ├── server.js
+│   └── vercel.json             # Vercel configuration
+├── backend/                     # Node.js + Express API (→ Railway)
+│   ├── server.js               # Persistent DB connection
+│   ├── migrations/             # Automatic schema migrations
+│   │   ├── 000_initial_schema.sql
+│   │   ├── 001_add_model_columns.sql
+│   │   └── 002_create_user_profiles.sql
 │   ├── models/
-│   ├── data/
 │   ├── package.json
-│   └── railway.json      # Railway configuration
-├── ml_service/           # Python + FastAPI ML service (→ Railway)
-│   ├── app.py
-│   ├── models/
+│   ├── railway.json            # Railway configuration
+│   └── .env.railway            # Railway environment template
+├── ml_service/                  # Python + FastAPI ML service (→ Railway)
+│   ├── app.py                  # Graceful model handling
+│   ├── model_loader.py         # Individual model error handling
+│   ├── models/                 # 6 trained models (196MB)
+│   │   ├── cat_pipeline_tuned.joblib
+│   │   ├── lgbm_pipeline_tuned.joblib
+│   │   ├── logreg_pipeline_tuned.joblib
+│   │   ├── rf_pipeline_tuned.joblib
+│   │   ├── xgb_pipeline_tuned.joblib
+│   │   └── stacking_pipeline_tuned.joblib
 │   ├── requirements.txt
-│   └── railway.json      # Railway configuration
-├── PRODUCTION_READY.md   # Production deployment guide
-├── QUICKSTART.md         # Quick local setup
-└── deployment.md         # Detailed deployment instructions
+│   ├── Dockerfile
+│   ├── railway.json            # Railway configuration
+│   └── .env.railway            # Railway environment template
+├── RAILWAY_DEPLOYMENT.md        # Complete Railway setup guide
+├── RAILWAY_QUICK_SETUP.md       # 5-minute deployment card
+├── verify_railway_setup.sh      # Pre-deployment verification
+├── QUICKSTART.md                # Quick local setup
+└── README.md                    # This file
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local Development)
 
 ### Prerequisites
 - Node.js 18+
-- Python 3.8+
+- Python 3.11+
 - MySQL 8.0+
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/mauryaabha991-arch/just_checking.git
+git clone https://github.com/DumAI-hub/HeartWise.git
 cd just_checking
 ```
 

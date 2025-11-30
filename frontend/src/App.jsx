@@ -6,6 +6,7 @@ import Signup from "./pages/Signup";
 import InputForm from "./pages/InputForm";
 import History from "./pages/History";
 import Suggestions from "./pages/Suggestions";
+import Profile from "./pages/Profile";
 import PrivateRoute from "./PrivateRoute";
 import "./App.css";
 
@@ -37,6 +38,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <Suggestions />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <Profile />
             </PrivateRoute>
           }
         />

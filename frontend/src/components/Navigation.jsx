@@ -69,6 +69,13 @@ export default function Navigation() {
                 History
               </button>
               <button
+                onClick={() => navigate("/profile")}
+                className={`nav-link ${isActive("/profile") ? "active" : ""}`}
+              >
+                <span className="nav-icon">👤</span>
+                Profile
+              </button>
+              <button
                 onClick={() => navigate("/suggestions")}
                 className={`nav-link ${isActive("/suggestions") ? "active" : ""}`}
               >

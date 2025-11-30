@@ -11,20 +11,27 @@
 async function predictRisk(features) {
   const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
   
-  console.log('🤖 Calling ML service at:', mlServiceUrl);
+  console.log('[INFO] Calling ML service at:', mlServiceUrl);
 
-  // Prepare payload with only the 10 features the model expects
+  // Prepare payload with all 17 features (base + engineered)
   const payload = {
     age_years: features.age_years,
     gender: features.gender,
-    bmi: features.bmi,
+    height: features.height,
+    weight: features.weight,
     ap_hi: features.ap_hi,
     ap_lo: features.ap_lo,
     cholesterol: features.cholesterol,
     gluc: features.gluc,
     smoke: features.smoke,
     alco: features.alco,
-    ACTIVE: features.ACTIVE
+    ACTIVE: features.ACTIVE,
+    bmi: features.bmi,
+    pulse_pressure: features.pulse_pressure,
+    age_group: features.age_group,
+    bmi_group: features.bmi_group,
+    smoke_age: features.smoke_age,
+    chol_bmi: features.chol_bmi
   };
 
   try {
@@ -40,15 +47,15 @@ async function predictRisk(features) {
     }
 
     const prediction = await response.json();
-    console.log('✅ Prediction received:', prediction.stacked);
+    console.log('[INFO] Prediction received:', prediction.stacked);
     
     return prediction;
     
   } catch (error) {
-    console.error('❌ ML service error:', error.message);
+    console.error('[ERROR] ML service error:', error.message);
     
     // Fallback to placeholder if ML service is unavailable
-    console.warn('⚠️  Using fallback prediction logic');
+    console.warn('[WARNING] Using fallback prediction logic');
     return getFallbackPrediction(features);
   }
 }

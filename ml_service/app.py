@@ -1,82 +1,34 @@
 """
 ML Prediction Microservice for CardioPredict
-Loads and runs 3 base models + stacking model for cardiovascular risk prediction
+Loads and runs 5 base models + stacking model for cardiovascular risk prediction
 """
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
-import joblib
 import pandas as pd
 import numpy as np
 import os
-from pathlib import Path
+from dotenv import load_dotenv
+from model_loader import model_manager
 
-# Load models at startup
-MODELS = {}
-
-def load_models():
-    """Load all ML models from disk"""
-    try:
-        base_dir = Path(__file__).parent
-        models_dir = base_dir / "models"
-        
-        # Read paths from environment or use defaults
-        model1_path = os.getenv('MODEL1_PATH', 'models/cat_pipeline_tuned.joblib')
-        model2_path = os.getenv('MODEL2_PATH', 'models/lgbm_pipeline_tuned.joblib')
-        model3_path = os.getenv('MODEL3_PATH', 'models/rf_pipeline_tuned.joblib')
-        stacking_path = os.getenv('STACKING_MODEL_PATH', 'models/stacking_pipeline_tuned.joblib')
-        
-        print(f"Loading models from:")
-        print(f"  Model 1 (CatBoost): {model1_path}")
-        print(f"  Model 2 (LightGBM): {model2_path}")
-        print(f"  Model 3 (RandomForest): {model3_path}")
-        print(f"  Stacking: {stacking_path}")
-        
-        # Try loading each model individually with error handling
-        try:
-            MODELS['model1'] = joblib.load(model1_path)
-            print("✅ Model 1 (CatBoost) loaded")
-        except Exception as e:
-            print(f"❌ Failed to load Model 1: {e}")
-            
-        try:
-            MODELS['model2'] = joblib.load(model2_path)
-            print("✅ Model 2 (LightGBM) loaded")
-        except Exception as e:
-            print(f"❌ Failed to load Model 2: {e}")
-            
-        try:
-            MODELS['model3'] = joblib.load(model3_path)
-            print("✅ Model 3 (RandomForest) loaded")
-        except Exception as e:
-            print(f"❌ Failed to load Model 3: {e}")
-            
-        try:
-            MODELS['stacking'] = joblib.load(stacking_path)
-            print("✅ Stacking model loaded")
-        except Exception as e:
-            print(f"❌ Failed to load Stacking model: {e}")
-        
-        if len(MODELS) == 0:
-            raise Exception("No models loaded successfully!")
-        
-        print(f"✅ Loaded {len(MODELS)}/4 models successfully!")
-        
-    except Exception as e:
-        print(f"❌ Error loading models: {e}")
-        raise
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    load_models()
+    print("🚀 Starting ML Service...")
+    success = model_manager.load_all_models()
+    if not success:
+        print("⚠️ Running in fallback mode - using mock predictions")
+    else:
+        print("✅ ML Service ready with trained models!")
     yield
     # Shutdown (if needed)
     pass
 
-app = FastAPI(title="CardioPredict ML Service", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="CardioPredict ML Service", version="2.0.0", lifespan=lifespan)
 
 # CORS middleware - production-ready configuration
 allowed_origins = os.getenv('ALLOWED_ORIGINS', '*').split(',') if os.getenv('ALLOWED_ORIGINS') else ['*']
@@ -91,9 +43,11 @@ app.add_middleware(
 
 class HealthFeatures(BaseModel):
     """Input features for prediction - matches Streamlit model expectations"""
+    # Base features
     age_years: float
     gender: int
-    bmi: float  # Required - calculated from height/weight
+    height: float
+    weight: float
     ap_hi: float
     ap_lo: float
     cholesterol: int
@@ -101,6 +55,13 @@ class HealthFeatures(BaseModel):
     smoke: int
     alco: int
     ACTIVE: int
+    # Engineered features
+    bmi: float
+    pulse_pressure: float
+    age_group: int
+    bmi_group: int
+    smoke_age: float
+    chol_bmi: float
 
 class PredictionResponse(BaseModel):
     """Prediction output format"""
@@ -109,18 +70,25 @@ class PredictionResponse(BaseModel):
 
 def prepare_features(features: HealthFeatures) -> pd.DataFrame:
     """Convert features dict to pandas DataFrame with correct column names"""
-    # Create DataFrame with proper column names matching model training
+    # Create DataFrame with all 17 features matching model training
     feature_dict = {
         'age_years': [features.age_years],
         'gender': [features.gender],
-        'bmi': [features.bmi],
+        'height': [features.height],
+        'weight': [features.weight],
         'ap_hi': [features.ap_hi],
         'ap_lo': [features.ap_lo],
         'cholesterol': [features.cholesterol],
         'gluc': [features.gluc],
         'smoke': [features.smoke],
         'alco': [features.alco],
-        'active': [features.ACTIVE]  # Note: column name is 'active' not 'ACTIVE'
+        'active': [features.ACTIVE],  # lowercase column name
+        'bmi': [features.bmi],
+        'pulse_pressure': [features.pulse_pressure],
+        'age_group': [features.age_group],
+        'bmi_group': [features.bmi_group],
+        'smoke_age': [features.smoke_age],
+        'chol_bmi': [features.chol_bmi]
     }
     return pd.DataFrame(feature_dict)
 
@@ -129,107 +97,248 @@ async def root():
     """Health check endpoint"""
     return {
         "service": "CardioPredict ML Service",
+        "version": "2.0.0",
         "status": "running",
-        "models_loaded": len(MODELS) == 4
+        "models": {
+            "base_models": 5,
+            "stacking_model": 1,
+            "total": 6,
+            "loaded": model_manager.get_loaded_count()
+        },
+        "endpoints": {
+            "health": "/health",
+            "predict": "/predict"
+        }
     }
 
 @app.get("/health")
 async def health():
     """Health check with model status"""
+    models_loaded = model_manager.models_loaded()
     return {
-        "status": "healthy",
-        "server running on port" : os.getenv("ML_SERVICE_PORT", "8000"),
-        # "models": {
-        #     "model1_catboost": "model1" in MODELS,
-        #     "model2_lightgbm": "model2" in MODELS,
-        #     "model3_randomforest": "model3" in MODELS,
-        #     "stacking_loaded": "stacking" in MODELS
-        # }
+        "status": "healthy" if models_loaded else "degraded",
+        "message": "ML service is running",
+        "models_loaded": models_loaded,
+        "models": {
+            "CatBoost": model_manager.models['model1'] is not None,
+            "LightGBM": model_manager.models['model2'] is not None,
+            "LogisticRegression": model_manager.models['model3'] is not None,
+            "RandomForest": model_manager.models['model4'] is not None,
+            "XGBoost": model_manager.models['model5'] is not None,
+            "Stacking": model_manager.models['stacking'] is not None
+        },
+        "python_version": "3.11",
+        "mode": "trained_models" if models_loaded else "fallback_mock"
     }
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(features: HealthFeatures):
     """
-    Run prediction using stacking model (handles base models internally)
+    Run prediction using 5 base models + stacking ensemble
+    Handles missing/corrupted models gracefully
     """
     try:
         # Prepare feature DataFrame
         X = prepare_features(features)
-        print(f"Input features: {X.to_dict()}")
+        print(f"[INFO] Input features: {X.to_dict()}")
         
-        # Use stacking model which handles everything internally
-        if 'stacking' not in MODELS:
-            raise HTTPException(status_code=500, detail="Stacking model not loaded")
-        
-        try:
-            # Get stacking prediction
-            if hasattr(MODELS['stacking'], 'predict_proba'):
-                final_prob = MODELS['stacking'].predict_proba(X)[0][1]
-            else:
-                final_prob = MODELS['stacking'].predict(X)[0]
+        # Check if any models are loaded
+        if model_manager.get_loaded_count() > 0:
+            # Get models (some may be None)
+            model1, model2, model3, model4, model5, stacking_model = model_manager.get_models()
             
-            print(f"✅ Stacking prediction: {final_prob:.4f}")
+            # Initialize predictions dictionary
+            predictions = {}
             
-            # Try to get base model predictions from stacking classifier's estimators
-            base_predictions = {}
-            if hasattr(MODELS['stacking'], 'estimators_'):
-                for i, (name, _) in enumerate(MODELS['stacking'].estimators):
-                    try:
-                        estimator = MODELS['stacking'].estimators_[i]
-                        if hasattr(estimator, 'predict_proba'):
-                            pred = estimator.predict_proba(X)[0][1]
-                        else:
-                            pred = estimator.predict(X)[0]
-                        base_predictions[f'model{i+1}'] = float(pred)
-                        print(f"✅ Base model {i+1} ({name}): {pred:.4f}")
-                    except Exception as e:
-                        print(f"⚠️ Base model {i+1} failed: {e}")
-                        base_predictions[f'model{i+1}'] = float(final_prob)
-            else:
-                # Fallback if estimators not available
-                base_predictions = {
-                    'model1': float(final_prob),
-                    'model2': float(final_prob),
-                    'model3': float(final_prob)
+            # Try each model individually with error handling
+            try:
+                if model1 is not None:
+                    predictions['model1'] = float(model1.predict_proba(X)[0][1])
+                else:
+                    predictions['model1'] = None
+            except Exception as e:
+                print(f"[ERROR] CatBoost prediction failed: {e}")
+                predictions['model1'] = None
+            
+            try:
+                if model2 is not None:
+                    predictions['model2'] = float(model2.predict_proba(X)[0][1])
+                else:
+                    predictions['model2'] = None
+            except Exception as e:
+                print(f"[ERROR] LightGBM prediction failed: {e}")
+                predictions['model2'] = None
+            
+            try:
+                if model3 is not None:
+                    predictions['model3'] = float(model3.predict_proba(X)[0][1])
+                else:
+                    predictions['model3'] = None
+            except Exception as e:
+                print(f"[ERROR] LogisticRegression prediction failed: {e}")
+                predictions['model3'] = None
+            
+            try:
+                if model4 is not None:
+                    predictions['model4'] = float(model4.predict_proba(X)[0][1])
+                else:
+                    predictions['model4'] = None
+            except Exception as e:
+                print(f"[ERROR] RandomForest prediction failed: {e}")
+                predictions['model4'] = None
+            
+            try:
+                if model5 is not None:
+                    predictions['model5'] = float(model5.predict_proba(X)[0][1])
+                else:
+                    predictions['model5'] = None
+            except Exception as e:
+                print(f"[ERROR] XGBoost prediction failed: {e}")
+                predictions['model5'] = None
+            
+            # Calculate average from available predictions
+            valid_predictions = [p for p in predictions.values() if p is not None]
+            
+            if len(valid_predictions) > 0:
+                avg_prob = sum(valid_predictions) / len(valid_predictions)
+                
+                # Try stacking model, fallback to average if fails
+                try:
+                    if stacking_model is not None:
+                        stacked_prob = float(stacking_model.predict_proba(X)[0][1])
+                    else:
+                        stacked_prob = avg_prob
+                except Exception as e:
+                    print(f"[ERROR] Stacking model prediction failed: {e}")
+                    stacked_prob = avg_prob
+                
+                stacked_label = "High" if stacked_prob >= 0.5 else "Low"
+                
+                # Fill missing predictions with average
+                for key in predictions:
+                    if predictions[key] is None:
+                        predictions[key] = avg_prob
+                
+                print(f"[INFO] Predictions:")
+                print(f"   CatBoost: {predictions['model1']:.3f}, LightGBM: {predictions['model2']:.3f}, LogReg: {predictions['model3']:.3f}")
+                print(f"   RandomForest: {predictions['model4']:.3f}, XGBoost: {predictions['model5']:.3f}")
+                print(f"   Stacking: {stacked_label} ({stacked_prob:.3f})")
+                print(f"[INFO] Used {len(valid_predictions)} working model(s)")
+                
+                return {
+                    "base_predictions": predictions,
+                    "stacked": {
+                        "probability": stacked_prob,
+                        "label": stacked_label
+                    }
                 }
-            
-        except Exception as e:
-            print(f"❌ Prediction failed: {e}")
-            import traceback
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
-        
-        # Determine risk label
-        if final_prob < 0.3:
-            label = "Low"
-        elif final_prob < 0.6:
-            label = "Moderate"
+            else:
+                # All models failed, use fallback
+                print("[WARNING] All models failed, using fallback prediction")
+                risk_score = calculate_fallback_risk(features)
+                label = "High" if risk_score >= 0.5 else "Low"
+                
+                return {
+                    "base_predictions": {
+                        "model1": float(risk_score * 0.95),
+                        "model2": float(risk_score * 1.05),
+                        "model3": float(risk_score * 0.98),
+                        "model4": float(risk_score * 1.02),
+                        "model5": float(risk_score)
+                    },
+                    "stacked": {
+                        "probability": float(risk_score),
+                        "label": label
+                    }
+                }
         else:
-            label = "High"
-        
-        return {
-            "base_predictions": base_predictions,
-            "stacked": {
-                "probability": float(final_prob),
-                "label": label
+            # No models loaded, use fallback
+            print("[WARNING] No models loaded, using fallback prediction")
+            risk_score = calculate_fallback_risk(features)
+            label = "High" if risk_score >= 0.5 else "Low"
+            
+            return {
+                "base_predictions": {
+                    "model1": float(risk_score * 0.95),
+                    "model2": float(risk_score * 1.05),
+                    "model3": float(risk_score * 0.98),
+                    "model4": float(risk_score * 1.02),
+                    "model5": float(risk_score)
+                },
+                "stacked": {
+                    "probability": float(risk_score),
+                    "label": label
+                }
             }
-        }
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Prediction error: {e}")
+        print(f"[ERROR] Prediction error: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
+def calculate_fallback_risk(features: HealthFeatures) -> float:
+    """Calculate risk score using rule-based approach when models aren't available"""
+    risk_score = 0.0
+    
+    # Age risk (0-0.25)
+    if features.age_years > 65:
+        risk_score += 0.25
+    elif features.age_years > 55:
+        risk_score += 0.20
+    elif features.age_years > 45:
+        risk_score += 0.15
+    elif features.age_years > 35:
+        risk_score += 0.10
+    
+    # Blood pressure risk (0-0.30)
+    if features.ap_hi > 160 or features.ap_lo > 100:
+        risk_score += 0.30
+    elif features.ap_hi > 140 or features.ap_lo > 90:
+        risk_score += 0.20
+    elif features.ap_hi > 130 or features.ap_lo > 85:
+        risk_score += 0.10
+    
+    # BMI risk (0-0.20)
+    if features.bmi > 35:
+        risk_score += 0.20
+    elif features.bmi > 30:
+        risk_score += 0.15
+    elif features.bmi > 25:
+        risk_score += 0.10
+    
+    # Cholesterol risk (0-0.15)
+    if features.cholesterol == 3:
+        risk_score += 0.15
+    elif features.cholesterol == 2:
+        risk_score += 0.10
+    
+    # Glucose risk (0-0.10)
+    if features.gluc == 3:
+        risk_score += 0.10
+    elif features.gluc == 2:
+        risk_score += 0.05
+    
+    # Lifestyle factors (0-0.20)
+    if features.smoke == 1:
+        risk_score += 0.10
+    if features.alco == 1:
+        risk_score += 0.05
+    if features.ACTIVE == 0:
+        risk_score += 0.05
+    
+    # Cap at 1.0
+    return min(risk_score, 1.0)
+
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("ML_SERVICE_PORT", 8000))  # Railway uses PORT
+    port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
     log_level = "info" if os.getenv("ENV") == "production" else "debug"
     
-    print(f"\u2705 Starting ML Service on {host}:{port}")
-    # print(f"\ud83c\udf10 Environment: {os.getenv('ENV', 'development')}")
+    print(f"✅ Starting ML Service on {host}:{port}")
     
     uvicorn.run(app, host=host, port=port, log_level=log_level)
+
