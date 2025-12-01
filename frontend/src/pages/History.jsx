@@ -156,7 +156,7 @@ export default function History() {
                   <span className="summary-label">Risk Probability</span>
                   <span className="summary-value" style={{ color: getRiskColor(rec.risk_label) }}>
                     {rec.stacked_probability 
-                      ? `${(rec.stacked_probability * 100).toFixed(1)}%`
+                      ? `${(parseFloat(rec.stacked_probability) * 100).toFixed(1)}%`
                       : "N/A"}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export default function History() {
                 </div>
                 <div className="summary-item">
                   <span className="summary-label">BMI</span>
-                  <span className="summary-value">{rec.bmi?.toFixed(1) || "N/A"}</span>
+                  <span className="summary-value">{rec.bmi ? parseFloat(rec.bmi).toFixed(1) : "N/A"}</span>
                 </div>
                 <div className="summary-item">
                   <span className="summary-label">Blood Pressure</span>

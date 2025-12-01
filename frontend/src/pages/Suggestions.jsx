@@ -186,7 +186,7 @@ export default function Suggestions() {
                       <span className="risk-summary-label">Probability</span>
                       <span className="risk-summary-value">
                         {selectedRecord.stacked_probability
-                          ? `${(selectedRecord.stacked_probability * 100).toFixed(1)}%`
+                          ? `${(parseFloat(selectedRecord.stacked_probability) * 100).toFixed(1)}%`
                           : "N/A"}
                       </span>
                     </div>
@@ -211,7 +211,7 @@ export default function Suggestions() {
                       <span className="metric-icon">⚖️</span>
                       <div>
                         <div className="metric-label">BMI</div>
-                        <div className="metric-value">{selectedRecord.bmi?.toFixed(1) || "N/A"}</div>
+                        <div className="metric-value">{selectedRecord.bmi ? parseFloat(selectedRecord.bmi).toFixed(1) : "N/A"}</div>
                       </div>
                     </div>
                     <div className="metric-item">
