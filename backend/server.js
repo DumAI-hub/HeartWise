@@ -422,7 +422,7 @@ app.post("/api/predictAndSave", async (req, res) => {
 
     // Step 2: Fetch previous health records for context
     const previousRecordsQuery = `
-      SELECT age_years, bmi, ap_hi, ap_lo, risk_label, stacked_probability, recorded_at
+      SELECT bmi, weight, ap_hi, ap_lo, risk_label, stacked_probability, recorded_at
       FROM health_features
       WHERE user_cd = ?
       ORDER BY recorded_at DESC
@@ -432,11 +432,32 @@ app.post("/api/predictAndSave", async (req, res) => {
     const previousRecords = await queryAsync(previousRecordsQuery, [user_cd]);
     const previousRecord = previousRecords.length > 0 ? previousRecords[0] : null;
 
+    // Calculate changes if previous record exists
+    let healthChanges = null;
+    if (previousRecord) {
+      const previousBMI = parseFloat(previousRecord.bmi);
+      const currentBMI = parseFloat(engineered.bmi);
+      const previousWeight = parseFloat(previousRecord.weight);
+      const currentWeight = parseFloat(normalized.weight);
+      
+      healthChanges = {
+        bmiChange: !isNaN(previousBMI) && !isNaN(currentBMI) 
+          ? (currentBMI - previousBMI).toFixed(2) 
+          : null,
+        weightChange: !isNaN(previousWeight) && !isNaN(currentWeight)
+          ? (currentWeight - previousWeight).toFixed(2)
+          : null,
+        previousRiskLabel: previousRecord.risk_label || null,
+        previousProbability: previousRecord.stacked_probability || null
+      };
+    }
+
     // Step 3: Generate AI advice with historical context
     const adviceText = await generateAdvice({
       features: allFeatures,
       prediction,
-      previousRecord
+      previousRecord,
+      healthChanges
     });
 
     // Step 4: Save to database with prediction results
@@ -486,11 +507,12 @@ app.post("/api/predictAndSave", async (req, res) => {
       user_cd: user_cd,
       record_id: insertResult.insertId,
       prediction: prediction.stacked,
-      advice_text: adviceText
+      advice_text: adviceText,
+      health_changes: healthChanges
     });
 
   } catch (error) {
-    console.error("Server error:", error);
+    console.error("[ERROR] Prediction endpoint error:", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
