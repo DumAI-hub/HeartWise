@@ -73,7 +73,7 @@ app.use(cors({
 }));
 
 // Add OPTIONS handler for preflight requests
-app.options('*', cors());
+// app.options('*', cors());
 
 app.use(bodyParser.json());
 
