@@ -11,24 +11,25 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy models directory first (for better caching)
-COPY models/ ./models/
-
-# Copy requirements
+# Copy requirements first (for better Docker layer caching)
 COPY requirements.txt .
 
 # Upgrade pip and install dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy entire ml_service directory (includes models/, app.py, etc.)
 COPY . .
 
-# Expose port (Railway will set PORT env variable)
+# Expose port
 EXPOSE 8000
 
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV MODEL_DIR=/app/models
+
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=5)" || exit 1
 
 # Start command
