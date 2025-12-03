@@ -194,10 +194,8 @@ const RegisterForm = () => {
                   background: 'rgba(255, 255, 255, 0.03)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '0.75rem',
-                  padding: '1.5rem',
-                  transition: 'all 0.3s ease'
-                }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'}
-                   onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}>
+                  padding: '1.5rem'
+                }}>
                   <div className="flex justify-between items-start mb-3">
                     <label className="block text-lg font-semibold" style={{ color: 'white' }}>
                       {field.label}
@@ -244,10 +242,8 @@ const RegisterForm = () => {
                 background: 'rgba(255, 255, 255, 0.03)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '0.75rem',
-                padding: '1.5rem',
-                transition: 'all 0.3s ease'
-              }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'}
-                 onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}>
+                padding: '1.5rem'
+              }}>
                 <label className="block text-lg font-semibold mb-3" style={{ color: 'white' }}>Gender</label>
                 <select
                   name="gender"
@@ -291,10 +287,8 @@ const RegisterForm = () => {
                     background: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '0.75rem',
-                    padding: '1.5rem',
-                    transition: 'all 0.3s ease'
-                  }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'}
-                     onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}>
+                    padding: '1.5rem'
+                  }}>
                     <div className="flex items-center space-x-4">
                       <input
                         type="checkbox"
@@ -336,11 +330,8 @@ const RegisterForm = () => {
                   border: 'none',
                   cursor: loading ? 'not-allowed' : 'pointer',
                   boxShadow: '0 10px 25px rgba(102, 126, 234, 0.3)',
-                  transition: 'all 0.3s ease',
                   display: 'block'
                 }}
-                onMouseEnter={(e) => !loading && (e.target.style.transform = 'translateY(-2px)')}
-                onMouseLeave={(e) => !loading && (e.target.style.transform = 'translateY(0)')}
               >
                 {loading ? "Analyzing..." : "Analyze Cardiovascular Risk"}
               </button>

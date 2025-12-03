@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navigation from "../components/Navigation";
 import { getApiUrl, axiosConfig } from "../config/api";
-import "../App.css";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -45,9 +44,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="homepage-wrapper">
+    <div className="homepage" style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="hero-modern">
         <div className="hero-container">

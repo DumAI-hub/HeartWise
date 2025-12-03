@@ -44,64 +44,202 @@ export default function Navigation() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="navbar">
-      <div className="navbar-content">
-        <div className="navbar-brand" onClick={() => navigate("/")}>
-          <div className="brand-icon">❤️</div>
-          <h1 className="brand-name">CardioPredict</h1>
+    <nav style={{
+      background: 'var(--color-surface)',
+      borderBottom: '1px solid var(--color-border)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
+      boxShadow: 'var(--shadow-sm)'
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '1rem 2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        {/* Logo */}
+        <div 
+          onClick={() => navigate("/")}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ fontSize: '1.75rem' }}>❤️</div>
+          <h1 style={{
+            fontFamily: 'var(--font-heading)',
+            fontSize: 'var(--text-2xl)',
+            color: 'var(--color-primary)',
+            fontWeight: '700'
+          }}>
+            HeartWise
+          </h1>
         </div>
 
-        <div className="navbar-links">
+        {/* Navigation Links */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {isLoggedIn ? (
             <>
               <button
                 onClick={() => navigate("/input")}
-                className={`nav-link ${isActive("/input") ? "active" : ""}`}
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  background: isActive("/input") ? 'var(--color-primary)' : 'transparent',
+                  color: isActive("/input") ? 'white' : 'var(--color-text)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: '500',
+                  fontSize: 'var(--text-sm)',
+                  cursor: 'pointer'
+                }}
               >
-                <span className="nav-icon">🔬</span>
-                Detection
+                Health Check
               </button>
+              
               <button
                 onClick={() => navigate("/history")}
-                className={`nav-link ${isActive("/history") ? "active" : ""}`}
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  background: isActive("/history") ? 'var(--color-primary)' : 'transparent',
+                  color: isActive("/history") ? 'white' : 'var(--color-text)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: '500',
+                  fontSize: 'var(--text-sm)',
+                  cursor: 'pointer'
+                }}
               >
-                <span className="nav-icon">📊</span>
                 History
               </button>
-              <button
-                onClick={() => navigate("/profile")}
-                className={`nav-link ${isActive("/profile") ? "active" : ""}`}
-              >
-                <span className="nav-icon">👤</span>
-                Profile
-              </button>
+
               <button
                 onClick={() => navigate("/suggestions")}
-                className={`nav-link ${isActive("/suggestions") ? "active" : ""}`}
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  background: isActive("/suggestions") ? 'var(--color-primary)' : 'transparent',
+                  color: isActive("/suggestions") ? 'white' : 'var(--color-text)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: '500',
+                  fontSize: 'var(--text-sm)',
+                  cursor: 'pointer'
+                }}
               >
-                <span className="nav-icon">💡</span>
-                AI Insights
+                Insights
               </button>
 
-              <div className="user-menu">
+              <div style={{ 
+                width: '1px', 
+                height: '24px', 
+                background: 'var(--color-border)',
+                margin: '0 0.5rem'
+              }} />
+
+              {/* User Menu */}
+              <div style={{ position: 'relative' }}>
                 <button
-                  className="user-button"
                   onClick={() => setShowDropdown(!showDropdown)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.625rem',
+                    padding: '0.5rem 1rem',
+                    background: 'var(--color-bg)',
+                    border: '2px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)'
+                  }}
                 >
-                  <div className="user-avatar">
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'var(--color-primary)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '600',
+                    fontSize: 'var(--text-sm)'
+                  }}>
                     {username.charAt(0).toUpperCase()}
                   </div>
-                  <span className="user-name">{username}</span>
-                  <span className="dropdown-arrow">▼</span>
+                  <span style={{
+                    fontWeight: '600',
+                    color: 'var(--color-text)',
+                    fontSize: 'var(--text-sm)'
+                  }}>
+                    {username}
+                  </span>
+                  <span style={{
+                    fontSize: '0.625rem',
+                    color: 'var(--color-text-tertiary)',
+                    transform: showDropdown ? 'rotate(180deg)' : 'rotate(0)'
+                  }}>
+                    ▼
+                  </span>
                 </button>
 
                 {showDropdown && (
-                  <div className="dropdown-menu">
-                    <button className="dropdown-item" onClick={() => navigate("/")}>
-                      <span>🏠</span> Home
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 0.5rem)',
+                    right: 0,
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    minWidth: '180px',
+                    overflow: 'hidden'
+                  }}>
+                    <button
+                      onClick={() => {
+                        setShowDropdown(false);
+                        navigate("/profile");
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 'var(--text-sm)',
+                        color: 'var(--color-text)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      👤 Profile
                     </button>
-                    <button className="dropdown-item logout" onClick={handleLogout}>
-                      <span>🚪</span> Logout
+                    <div style={{
+                      height: '1px',
+                      background: 'var(--color-border)',
+                      margin: '0.25rem 0'
+                    }} />
+                    <button
+                      onClick={handleLogout}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 'var(--text-sm)',
+                        color: 'var(--color-error)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🚪 Logout
                     </button>
                   </div>
                 )}
@@ -111,13 +249,35 @@ export default function Navigation() {
             <>
               <button
                 onClick={() => navigate("/login")}
-                className="nav-link-button login-btn"
+                style={{
+                  padding: '0.625rem 1.5rem',
+                  background: 'transparent',
+                  color: 'var(--color-primary)',
+                  border: '2px solid var(--color-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: '600',
+                  fontSize: 'var(--text-sm)',
+                  cursor: 'pointer'
+                }}
               >
                 Login
               </button>
+              
               <button
                 onClick={() => navigate("/signup")}
-                className="nav-link-button signup-btn"
+                style={{
+                  padding: '0.625rem 1.5rem',
+                  background: 'var(--color-primary)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: '600',
+                  fontSize: 'var(--text-sm)',
+                  cursor: 'pointer',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
               >
                 Sign Up
               </button>
