@@ -374,13 +374,26 @@ def calculate_fallback_risk(features: HealthFeatures) -> float:
     # Cap at 1.0
     return min(risk_score, 1.0)
 
+# This should already be in your code (verify it's there):
 if __name__ == "__main__":
+    import os
+    
+    # Railway automatically sets PORT - don't hardcode it!
+    port = int(os.getenv("PORT", 8000))  # 8000 is just fallback for local dev
+    
+    print(f"\n{'='*60}")
+    print(f"✅ Starting ML Service on 0.0.0.0:{port}")
+    print(f"📊 Models loaded: {len([m for m in model_manager.models.values() if m is not None])}/6")
+    print(f"🌐 Health: http://0.0.0.0:{port}/health")
+    print(f"🔮 Predict: http://0.0.0.0:{port}/predict")
+    print(f"{'='*60}\n")
+    
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    host = os.getenv("HOST", "0.0.0.0")
-    log_level = "info" if os.getenv("ENV") == "production" else "debug"
-    
-    print(f"✅ Starting ML Service on {host}:{port}")
-    
-    uvicorn.run(app, host=host, port=port, log_level=log_level)
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0", 
+        port=port,
+        log_level="info",
+        access_log=True
+    )
 
