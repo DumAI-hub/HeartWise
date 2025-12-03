@@ -1,6 +1,10 @@
 import os
 import joblib
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class ModelManager:
     def __init__(self):
@@ -17,14 +21,24 @@ class ModelManager:
             'stacking': None  # Stacking Ensemble
         }
         
-        # Model filenames
+        # Model filenames - can be overridden by environment variables
         self.filenames = {
-            'model1': 'cat_pipeline_tuned.joblib',
-            'model2': 'lgbm_pipeline_tuned.joblib',
-            'model3': 'logreg_pipeline_tuned.joblib',
-            'model4': 'rf_pipeline_tuned.joblib',
-            'model5': 'xgb_pipeline_tuned.joblib',
-            'stacking': 'stacking_pipeline_tuned.joblib'
+            'model1': os.getenv('MODEL1_FILENAME', 'cb_pipeline_tuned.joblib'),
+            'model2': os.getenv('MODEL2_FILENAME', 'lgb_pipeline_tuned.joblib'),
+            'model3': os.getenv('MODEL3_FILENAME', 'logreg_pipeline_tuned.joblib'),
+            'model4': os.getenv('MODEL4_FILENAME', 'rf_pipeline_tuned.joblib'),
+            'model5': os.getenv('MODEL5_FILENAME', 'xgb_pipeline_tuned.joblib'),
+            'stacking': os.getenv('STACKING_FILENAME', 'stacking_pipeline_tuned.joblib')
+        }
+        
+        # Google Drive file IDs for downloading models (optional)
+        self.gdrive_ids = {
+            'model1': os.getenv('MODEL1_GDRIVE_ID'),
+            'model2': os.getenv('MODEL2_GDRIVE_ID'),
+            'model3': os.getenv('MODEL3_GDRIVE_ID'),
+            'model4': os.getenv('MODEL4_GDRIVE_ID'),
+            'model5': os.getenv('MODEL5_GDRIVE_ID'),
+            'stacking': os.getenv('STACKING_GDRIVE_ID')
         }
         
         # Model names for display
@@ -39,6 +53,47 @@ class ModelManager:
         
         # Track which models loaded successfully
         self.loaded_models = set()
+    
+    def download_from_gdrive(self, model_name):
+        """Download model from Google Drive if file ID is provided"""
+        gdrive_id = self.gdrive_ids.get(model_name)
+        display_name = self.display_names[model_name]
+        
+        if not gdrive_id:
+            print(f"[DEBUG] No Google Drive ID for {display_name}")
+            return False
+        
+        filename = self.filenames[model_name]
+        output_path = os.path.join(self.models_dir, filename)
+        
+        print(f"[DEBUG] Checking {display_name}: file={filename}, exists={os.path.exists(output_path)}")
+        
+        # Skip if file already exists
+        if os.path.exists(output_path):
+            print(f"[INFO] ✓ {display_name} already exists locally")
+            return True
+        
+        try:
+            print(f"[INFO] ⬇ Downloading {display_name} from Google Drive...")
+            print(f"[DEBUG] File ID: {gdrive_id}")
+            import gdown
+            url = f'https://drive.google.com/uc?id={gdrive_id}'
+            gdown.download(url, output_path, quiet=False)
+            
+            # Verify download
+            if os.path.exists(output_path):
+                size_mb = os.path.getsize(output_path) / (1024 * 1024)
+                print(f"[INFO] ✓ Successfully downloaded {display_name} ({size_mb:.2f} MB)")
+                return True
+            else:
+                print(f"[ERROR] Download completed but file not found: {output_path}")
+                return False
+                
+        except Exception as e:
+            print(f"[ERROR] Failed to download {display_name}: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     def load_local_model(self, model_name):
         """Load model from local directory"""
@@ -69,11 +124,23 @@ class ModelManager:
             return None
     
     def load_all_models(self):
-        """Load all models from local directory"""
+        """Load all models from local directory or download from Google Drive"""
         print("=" * 60)
         print("[MIGRATION] Starting model loading process...")
         print(f"[MIGRATION] Model directory: {self.models_dir}")
         print("=" * 60)
+        
+        # Try to download models from Google Drive if IDs are provided
+        print("[MIGRATION] Checking for Google Drive downloads...")
+        for model_name in ['model1', 'model2', 'model3', 'model4', 'model5', 'stacking']:
+            gdrive_id = self.gdrive_ids.get(model_name)
+            if gdrive_id:
+                display_name = self.display_names[model_name]
+                print(f"[INFO] Google Drive ID found for {display_name}")
+                self.download_from_gdrive(model_name)
+            else:
+                display_name = self.display_names[model_name]
+                print(f"[INFO] No Google Drive ID for {display_name} - will use local file")
         
         # Check what's in the directory
         if os.path.exists(self.models_dir):

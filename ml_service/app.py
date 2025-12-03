@@ -68,6 +68,48 @@ class PredictionResponse(BaseModel):
     base_predictions: dict
     stacked: dict
 
+# Add this BEFORE the app initialization (near the top, after imports):
+
+class StackingModel:
+    """
+    Custom stacking ensemble class for loading pre-trained stacking models.
+    This matches the class used during model training.
+    """
+    def __init__(self, base_models=None, meta_model=None):
+        self.base_models = base_models or []
+        self.meta_model = meta_model
+    
+    def predict_proba(self, X):
+        """Generate probability predictions from the stacking ensemble"""
+        if not self.base_models or self.meta_model is None:
+            raise ValueError("Models not properly loaded")
+        
+        # Get base model predictions
+        base_predictions = []
+        
+        # Handle both list and dict of base models
+        if isinstance(self.base_models, dict):
+            for name, model in self.base_models.items():
+                pred = model.predict_proba(X)[:, 1]  # Get probability of class 1
+                base_predictions.append(pred)
+        elif isinstance(self.base_models, list):
+            for model in self.base_models:
+                pred = model.predict_proba(X)[:, 1]  # Get probability of class 1
+                base_predictions.append(pred)
+        else:
+            raise ValueError(f"base_models must be dict or list, got {type(self.base_models)}")
+        
+        # Stack predictions and use meta model
+        import numpy as np
+        stacked = np.column_stack(base_predictions)
+        return self.meta_model.predict_proba(stacked)
+    
+    def predict(self, X):
+        """Generate class predictions"""
+        proba = self.predict_proba(X)
+        return (proba[:, 1] >= 0.5).astype(int)
+
+# ...existing code...
 def prepare_features(features: HealthFeatures) -> pd.DataFrame:
     """Convert features dict to pandas DataFrame with correct column names"""
     # Create DataFrame with all 17 features matching model training
