@@ -31,7 +31,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="CardioPredict ML Service", version="2.0.0", lifespan=lifespan)
 
 # CORS middleware - production-ready configuration
-allowed_origins = os.getenv('ALLOWED_ORIGINS', '*').split(',') if os.getenv('ALLOWED_ORIGINS') else ['*']
+allowed_origins_env = os.getenv('ALLOWED_ORIGINS', '')
+
+if allowed_origins_env:
+    # If ALLOWED_ORIGINS is set, use those specific origins
+    allowed_origins = [origin.strip() for origin in allowed_origins_env.split(',')]
+    print(f"[CORS] Allowed origins: {allowed_origins}")
+else:
+    # Default to allow all for backend-to-backend communication
+    allowed_origins = ["*"]
+    print("[CORS] Allowing all origins (default)")
 
 app.add_middleware(
     CORSMiddleware,
