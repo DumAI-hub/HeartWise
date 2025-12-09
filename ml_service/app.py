@@ -31,7 +31,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="CardioPredict ML Service", version="2.0.0", lifespan=lifespan)
 
 # CORS middleware - production-ready configuration
-allowed_origins = os.getenv('ALLOWED_ORIGINS', '*').split(',') if os.getenv('ALLOWED_ORIGINS') else ['*']
+allowed_origins_env = os.getenv('ALLOWED_ORIGINS', '')
+
+if allowed_origins_env:
+    # If ALLOWED_ORIGINS is set, use those specific origins
+    allowed_origins = [origin.strip() for origin in allowed_origins_env.split(',')]
+    print(f"[CORS] Allowed origins: {allowed_origins}")
+else:
+    # Default to allow all for backend-to-backend communication
+    allowed_origins = ["*"]
+    print("[CORS] Allowing all origins (default)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +77,48 @@ class PredictionResponse(BaseModel):
     base_predictions: dict
     stacked: dict
 
+# Add this BEFORE the app initialization (near the top, after imports):
+
+class StackingModel:
+    """
+    Custom stacking ensemble class for loading pre-trained stacking models.
+    This matches the class used during model training.
+    """
+    def __init__(self, base_models=None, meta_model=None):
+        self.base_models = base_models or []
+        self.meta_model = meta_model
+    
+    def predict_proba(self, X):
+        """Generate probability predictions from the stacking ensemble"""
+        if not self.base_models or self.meta_model is None:
+            raise ValueError("Models not properly loaded")
+        
+        # Get base model predictions
+        base_predictions = []
+        
+        # Handle both list and dict of base models
+        if isinstance(self.base_models, dict):
+            for name, model in self.base_models.items():
+                pred = model.predict_proba(X)[:, 1]  # Get probability of class 1
+                base_predictions.append(pred)
+        elif isinstance(self.base_models, list):
+            for model in self.base_models:
+                pred = model.predict_proba(X)[:, 1]  # Get probability of class 1
+                base_predictions.append(pred)
+        else:
+            raise ValueError(f"base_models must be dict or list, got {type(self.base_models)}")
+        
+        # Stack predictions and use meta model
+        import numpy as np
+        stacked = np.column_stack(base_predictions)
+        return self.meta_model.predict_proba(stacked)
+    
+    def predict(self, X):
+        """Generate class predictions"""
+        proba = self.predict_proba(X)
+        return (proba[:, 1] >= 0.5).astype(int)
+
+# ...existing code...
 def prepare_features(features: HealthFeatures) -> pd.DataFrame:
     """Convert features dict to pandas DataFrame with correct column names"""
     # Create DataFrame with all 17 features matching model training
@@ -332,13 +383,26 @@ def calculate_fallback_risk(features: HealthFeatures) -> float:
     # Cap at 1.0
     return min(risk_score, 1.0)
 
+# This should already be in your code (verify it's there):
 if __name__ == "__main__":
+    import os
+    
+    # Railway automatically sets PORT - don't hardcode it!
+    port = int(os.getenv("PORT", 8000))  # 8000 is just fallback for local dev
+    
+    print(f"\n{'='*60}")
+    print(f"✅ Starting ML Service on 0.0.0.0:{port}")
+    print(f"📊 Models loaded: {len([m for m in model_manager.models.values() if m is not None])}/6")
+    print(f"🌐 Health: http://0.0.0.0:{port}/health")
+    print(f"🔮 Predict: http://0.0.0.0:{port}/predict")
+    print(f"{'='*60}\n")
+    
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    host = os.getenv("HOST", "0.0.0.0")
-    log_level = "info" if os.getenv("ENV") == "production" else "debug"
-    
-    print(f"✅ Starting ML Service on {host}:{port}")
-    
-    uvicorn.run(app, host=host, port=port, log_level=log_level)
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0", 
+        port=port,
+        log_level="info",
+        access_log=True
+    )
 

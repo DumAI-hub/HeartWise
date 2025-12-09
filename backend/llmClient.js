@@ -106,11 +106,12 @@ CVD Risk: ${label} (${(probability * 100).toFixed(1)}%).`;
   // Add historical context if available
   if (previousRecord) {
     const prevDate = new Date(previousRecord.recorded_at).toLocaleDateString();
-    const bmiChange = (bmi - previousRecord.bmi).toFixed(1);
+    const prevBmi = parseFloat(previousRecord.bmi) || 0;
+    const bmiChange = (bmi - prevBmi).toFixed(1);
     const bpChange = (ap_hi - previousRecord.ap_hi);
     const riskChange = label !== previousRecord.risk_label;
     
-    prompt += `\n\nPrevious Record (${prevDate}): BMI ${previousRecord.bmi.toFixed(1)}, BP ${previousRecord.ap_hi}/${previousRecord.ap_lo}, Risk: ${previousRecord.risk_label} (${(previousRecord.stacked_probability * 100).toFixed(1)}%).
+    prompt += `\n\nPrevious Record (${prevDate}): BMI ${prevBmi.toFixed(1)}, BP ${previousRecord.ap_hi}/${previousRecord.ap_lo}, Risk: ${previousRecord.risk_label} (${(previousRecord.stacked_probability * 100).toFixed(1)}%).
 
 Changes: BMI ${bmiChange > 0 ? '+' : ''}${bmiChange}, BP ${bpChange > 0 ? '+' : ''}${bpChange}/${(ap_lo - previousRecord.ap_lo)}${riskChange ? `, Risk changed from ${previousRecord.risk_label} to ${label}` : ''}.`;
   }
@@ -144,9 +145,10 @@ function generatePlaceholderAdvice({ features, prediction, previousRecord = null
     advice += `📊 Progress Since ${prevDate} (${daysSince} days ago):\n`;
     
     // BMI comparison
-    const bmiChange = bmi - previousRecord.bmi;
+    const prevBmi = parseFloat(previousRecord.bmi) || 0;
+    const bmiChange = bmi - prevBmi;
     if (Math.abs(bmiChange) > 0.5) {
-      advice += `• BMI: ${previousRecord.bmi.toFixed(1)} → ${bmi.toFixed(1)} (${bmiChange > 0 ? '+' : ''}${bmiChange.toFixed(1)}) ${bmiChange < 0 ? '✅' : '⚠️'}\n`;
+      advice += `• BMI: ${prevBmi.toFixed(1)} → ${bmi.toFixed(1)} (${bmiChange > 0 ? '+' : ''}${bmiChange.toFixed(1)}) ${bmiChange < 0 ? '✅' : '⚠️'}\n`;
     }
     
     // Blood pressure comparison
