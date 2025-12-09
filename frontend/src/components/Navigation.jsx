@@ -47,41 +47,22 @@ export default function Navigation() {
     <nav className="navbar">
       <div className="navbar-content">
         <div className="navbar-brand" onClick={() => navigate("/")}>
-          <div className="brand-icon">❤️</div>
+          
           <h1 className="brand-name">CardioPredict</h1>
         </div>
 
         <div className="navbar-links">
           {isLoggedIn ? (
             <>
-              <button
-                onClick={() => navigate("/input")}
-                className={`nav-link ${isActive("/input") ? "active" : ""}`}
-              >
-                <span className="nav-icon">🔬</span>
-                Detection
-              </button>
-              <button
-                onClick={() => navigate("/history")}
-                className={`nav-link ${isActive("/history") ? "active" : ""}`}
-              >
-                <span className="nav-icon">📊</span>
-                History
-              </button>
+             
               <button
                 onClick={() => navigate("/profile")}
                 className={`nav-link ${isActive("/profile") ? "active" : ""}`}
               >
-                <span className="nav-icon">👤</span>
+               
                 Profile
               </button>
-              <button
-                onClick={() => navigate("/suggestions")}
-                className={`nav-link ${isActive("/suggestions") ? "active" : ""}`}
-              >
-                <span className="nav-icon">💡</span>
-                AI Insights
-              </button>
+              
 
               <div className="user-menu">
                 <button
@@ -98,10 +79,10 @@ export default function Navigation() {
                 {showDropdown && (
                   <div className="dropdown-menu">
                     <button className="dropdown-item" onClick={() => navigate("/")}>
-                      <span>🏠</span> Home
+                      Home
                     </button>
                     <button className="dropdown-item logout" onClick={handleLogout}>
-                      <span>🚪</span> Logout
+                       Logout
                     </button>
                   </div>
                 )}

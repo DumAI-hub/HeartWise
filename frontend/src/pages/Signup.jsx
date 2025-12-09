@@ -51,13 +51,11 @@ export default function Signup() {
       <div className="auth-background"></div>
       
       <div className="auth-container">
-        <button onClick={() => navigate("/")} className="back-button">
-          ← Back to Home
-        </button>
+      
 
         <div className="auth-card">
           <div className="auth-card-header">
-            <div className="auth-logo">❤️</div>
+           
             <h2 className="auth-title">Create Account</h2>
             <p className="auth-subtitle">Join us to start monitoring your heart health</p>
           </div>
@@ -65,7 +63,7 @@ export default function Signup() {
           <form className="auth-form" onSubmit={handleSubmit}>
             {error && (
               <div className="error-message">
-                <span className="error-icon">⚠️</span>
+              
                 {error}
               </div>
             )}
@@ -135,7 +133,11 @@ export default function Signup() {
               </p>
             </div>
           </form>
+          
         </div>
+         <button onClick={() => navigate("/")} className="back-button">
+          ← Home
+        </button>
       </div>
     </div>
   );

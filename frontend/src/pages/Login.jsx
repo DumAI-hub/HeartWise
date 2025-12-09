@@ -38,13 +38,11 @@ export default function Login() {
       <div className="auth-background"></div>
       
       <div className="auth-container">
-        <button onClick={() => navigate("/")} className="back-button">
-          ← Back to Home
-        </button>
+      
 
         <div className="auth-card">
           <div className="auth-card-header">
-            <div className="auth-logo">❤️</div>
+           
             <h2 className="auth-title">Welcome Back</h2>
             <p className="auth-subtitle">Login to continue your health journey</p>
           </div>
@@ -52,7 +50,7 @@ export default function Login() {
           <form className="auth-form" onSubmit={handleSubmit}>
             {error && (
               <div className="error-message">
-                <span className="error-icon">⚠️</span>
+                
                 {error}
               </div>
             )}
@@ -109,6 +107,9 @@ export default function Login() {
             </div>
           </form>
         </div>
+         <button onClick={() => navigate("/")} className="back-button">
+          ← Home
+        </button>
       </div>
     </div>
   );

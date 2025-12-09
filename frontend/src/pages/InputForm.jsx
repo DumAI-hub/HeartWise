@@ -169,10 +169,10 @@ const RegisterForm = () => {
           marginTop: '1.5rem'
         }}>
           <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold mb-3" style={{ color: 'white' }}>
+            <h2 className="text-4xl font-bold mb-3" style={{ color: 'black' }}>
               Cardiovascular Risk Assessment
             </h2>
-            <p className="text-lg" style={{ color: '#94a3b8' }}>
+            <p className="text-lg" style={{ color: 'grey' }}>
               Enter your health details for AI-powered cardiovascular disease detection
             </p>
           </div>
@@ -192,14 +192,14 @@ const RegisterForm = () => {
               ].map((field) => (
                 <div key={field.name} style={{
                   background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(45, 25, 75, 0.1)',
                   borderRadius: '0.75rem',
                   padding: '1.5rem',
                   transition: 'all 0.3s ease'
                 }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'}
                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}>
                   <div className="flex justify-between items-start mb-3">
-                    <label className="block text-lg font-semibold" style={{ color: 'white' }}>
+                    <label className="block text-lg font-semibold" style={{ color: 'black' }}>
                       {field.label}
                     </label>
                     <span className="text-sm px-2 py-1 rounded" style={{ 
