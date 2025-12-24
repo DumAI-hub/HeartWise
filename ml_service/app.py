@@ -1,5 +1,5 @@
 """
-ML Prediction Microservice for CardioPredict
+ML Prediction Microservice for HeartWise
 Loads and runs 5 base models + stacking model for cardiovascular risk prediction
 """
 
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     # Shutdown (if needed)
     pass
 
-app = FastAPI(title="CardioPredict ML Service", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="HeartWise ML Service", version="2.0.0", lifespan=lifespan)
 
 # CORS middleware - production-ready configuration
 allowed_origins_env = os.getenv('ALLOWED_ORIGINS', '')

@@ -22,7 +22,7 @@ export default function Login() {
       );
 
       if (response.data.success) {
-        navigate("/input");
+        navigate("/");
       } else {
         setError(response.data.message || "Login failed");
       }
@@ -34,12 +34,11 @@ export default function Login() {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--color-bg)',
       padding: 'var(--space-xl)'
     }}>
       <div style={{
@@ -56,7 +55,7 @@ export default function Login() {
             padding: 'var(--space-sm) var(--space-md)',
             background: 'transparent',
             border: 'none',
-            color: 'var(--color-text-secondary)',
+            color: '#e5e7eb',
             fontFamily: 'var(--font-body)',
             fontSize: 'var(--text-sm)',
             fontWeight: '500',
@@ -68,7 +67,7 @@ export default function Login() {
         </button>
 
         {/* Login Card */}
-        <div className="classic-card" style={{ padding: 'var(--space-2xl)' }}>
+        <div className="classic-card" style={{ padding: 'var(--space-2xl)', backgroundColor: '#ffffff', color: '#111827' }}>
           {/* Header */}
           <div style={{ 
             textAlign: 'center', 
@@ -76,18 +75,21 @@ export default function Login() {
             borderBottom: '2px solid var(--color-border)',
             paddingBottom: 'var(--space-lg)'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>❤️</div>
-            <h2 style={{
+            
+            {/* <h2 style={{
               fontFamily: 'var(--font-heading)',
               fontSize: 'var(--text-3xl)',
               color: 'var(--color-primary)',
               marginBottom: 'var(--space-xs)'
             }}>
               Welcome Back
-            </h2>
+            </h2> */}
             <p style={{
-              color: 'var(--color-text-secondary)',
-              fontSize: 'var(--text-sm)'
+              color: 'var(--color-primary)',
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'var(--text-3xl)',
+              color: 'var(--color-primary)',
+              marginBottom: 'var(--space-xs)'
             }}>
               Login to continue your health journey
             </p>

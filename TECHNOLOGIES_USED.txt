@@ -1,0 +1,128 @@
+Technologies Used and Rationale
+
+1. Overall Technology Strategy
+
+For this cardiovascular risk pre‑screening system, the technology stack was chosen to satisfy four main goals: (1) accurate and explainable machine‑learning predictions, (2) a responsive and accessible web user interface, (3) a clean separation between clinical logic, AI advice, and presentation, and (4) ease of deployment and future extension. To achieve this, the project combines a React‑based frontend, a Node.js/Express backend with a MySQL relational database, a separate FastAPI microservice hosting the trained ensemble of ML models, and an external integration with Google’s Gemini generative‑AI API for text advice. Each layer focuses on a single responsibility: the frontend handles user interaction and validation, the Node.js backend manages authentication, persistence, and orchestration, the FastAPI service focuses purely on numerical risk prediction, and Gemini provides natural‑language guidance with strong medical disclaimers.
+
+2. Frontend Technology – React
+
+2.1 Why React instead of plain HTML/CSS/JS or other frameworks
+
+React was selected as the frontend framework in preference to plain HTML/CSS/JavaScript and to alternatives such as Angular or Vue for several reasons:
+
+- Component‑based architecture: React’s component model is well‑suited to a form‑heavy application with multiple views (Home, Input Form, Login, Signup, History, Suggestions, Profile). Each page can be built as a reusable component, and shared pieces like navigation bars, buttons, and cards can be defined once and reused consistently.
+- One‑way data flow and state management: The cardiovascular risk form involves multiple fields (age, blood pressure, cholesterol category, glucose category, lifestyle toggles) whose values must be validated, encoded, and submitted together. React’s unidirectional data flow and hooks provide a clean way to track the current form state, show validation errors, and render results without manual DOM updates.
+- Ecosystem and learning curve: Compared with Angular, React has a lighter core and allows using only the pieces needed. For a single‑page medical pre‑screening app, a full Angular framework would be overkill. React is widely adopted, with strong community support and extensive documentation.
+- Performance and user experience: React’s virtual DOM allows efficient re‑rendering when form fields change or results arrive from the backend. This is important when showing loading states, risk results, and AI advice.
+
+2.2 Advantages React gives this project
+
+- Clear page structure: Pages like Home, Input Form, Login, Signup, History, Suggestions, and Profile are each implemented as separate components under src/pages. Routing between them can be handled consistently, and each page encapsulates its own layout and logic.
+- Declarative validation and feedback: The Input Form page can declare the current input state and show helper text, error messages, and disclaimers in response to state changes, instead of manually manipulating HTML.
+- Simple integration with APIs: React components call the Node.js backend using fetch or Axios inside effects or event handlers. Asynchronous requests to prediction, login, signup, and history endpoints are easy to coordinate.
+
+2.3 How React is used properly in the application
+
+- Separation of concerns by page: Each major feature corresponds to a well‑named component; this keeps each file focused and easier to understand.
+- State and side‑effects: Hooks manage local state (form values, loading flags, fetched records) and side‑effects (API calls on page load) according to React’s functional‑component best practices.
+- Visual consistency and accessibility: Shared CSS (classic card style, dark medical background) ensures consistent appearance across pages. Labels, helper text, and disclaimers are rendered clearly around form controls.
+
+3. Backend Web Service – Node.js with Express
+
+3.1 Why Node.js/Express instead of other backend stacks
+
+The backend web service is implemented in Node.js using the Express framework, rather than Python/Django, Java/Spring, or PHP/Laravel, for several reasons:
+
+- Single‑language full‑stack development: Using JavaScript on the server as well as the client allows a uniform development experience. Data structures (like JSON for predictions and history records) map naturally between frontend and backend.
+- Lightweight and flexible: Express provides routing, middleware, and HTTP handling with little overhead, which is ideal for an API‑centric application that primarily exposes JSON endpoints.
+- High concurrency: Cardiovascular risk assessments and history queries are short‑lived, I/O‑bound operations. Node.js’s event‑driven, non‑blocking I/O model is well suited to this pattern.
+- Ecosystem for integration: Node.js has mature libraries for HTTP requests, authentication, logging, and MySQL connectivity, as well as for talking to external HTTP AI services.
+
+3.2 Advantages Node.js gives this project
+
+- Efficient API gateway: The Node.js layer receives user requests, validates inputs, coordinates calls to the ML microservice and the Gemini API, persists data into MySQL, and returns unified JSON responses.
+- Easy JSON handling: All communication between layers uses JSON, which Node.js handles naturally.
+- Rapid development: Adding or modifying endpoints (for example, new history filters or a profile update route) is straightforward.
+
+3.3 How Node.js/Express is used properly in the application
+
+- Clear route handlers: Specific routes handle login, signup, predictions, and history retrieval. For predictions, the flow is validate inputs, compute derived features like BMI, call the ML service, call the LLM advice client, then save and return the combined result.
+- Middleware and validation: Input validation and business rules are close to the route logic, ensuring only sensible data is processed and stored.
+- Orchestration of external services: Node.js coordinates calls to the ML microservice and Gemini, with error handling and fallbacks, rather than mixing ML or LLM logic into the frontend.
+
+4. Machine‑Learning Microservice – Python with FastAPI
+
+4.1 Why Python and FastAPI instead of doing ML inside Node
+
+The ML prediction engine is a separate Python FastAPI service, rather than being embedded directly in Node.js, because:
+
+- Python is the primary ML ecosystem: The models (CatBoost, LightGBM, Logistic Regression, Random Forest, XGBoost, stacking ensemble) are trained and persisted using Python ML libraries. Serving them from Python avoids complex cross‑language model loading.
+- FastAPI performance and types: FastAPI is a modern framework for fast JSON APIs, with automatic documentation and request validation via Pydantic models.
+- Separation of concerns: A dedicated ML microservice can be scaled, retrained, or replaced without changing the Node.js business logic or frontend.
+
+4.2 Advantages FastAPI gives this project
+
+- Strict input schemas: Pydantic models define the request body for predictions, ensuring the ML pipeline receives correctly typed data.
+- Clear prediction lifecycle: The service follows a standard sequence: receive JSON, validate, preprocess, run models, compute risk probability and label, return JSON.
+- Performance and async support: FastAPI can handle multiple prediction requests efficiently.
+
+4.3 How the ML service is used properly
+
+- Single prediction endpoint: POST /predict takes normalized features and returns the risk label and probability.
+- Pre‑trained, serialized models: Models are trained offline, serialized as joblib files, and loaded at startup; live training is not done in production.
+- Post‑processing inside the service: Mapping probabilities to risk categories is implemented in the service to keep behaviour consistent.
+
+5. Database Layer – MySQL
+
+5.1 Why MySQL instead of a NoSQL database
+
+A relational database (MySQL) is used instead of a NoSQL store because:
+
+- Structured and relational data: Users and health prediction records have clear relationships that fit a relational schema.
+- ACID guarantees: Consistent storage of assessments and user accounts is critical in a health‑related application.
+- Familiarity and portability: MySQL is widely supported in hosting environments.
+
+5.2 Advantages MySQL gives this project
+
+- Easy querying for history and suggestions: SQL makes it straightforward to retrieve a user’s past records and filter only those that contain AI advice.
+- Structured schema design: Typed fields for age, blood pressure, BMI, risk label, and probabilities match the project’s data dictionary.
+
+5.3 How MySQL is used properly
+
+- Clear table separation: User accounts and assessment records are stored in separate tables linked by a user reference.
+- Typed columns and constraints: Appropriate INT, DECIMAL, and VARCHAR types enforce data validity.
+- Indexing: Indexes on user identifiers and timestamps speed up history lookups.
+
+6. Generative‑AI Integration – Google Gemini API
+
+6.1 Why an external LLM instead of rule‑based text only
+
+The system uses Google’s Gemini API to generate personalized lifestyle and follow‑up advice rather than relying purely on fixed templates because:
+
+- It produces richer, more personalized language that is easier for users to understand.
+- It can adapt advice to different patterns of risk factors and history.
+- Prompts can be refined over time without retraining models.
+
+6.2 Advantages Gemini gives this project
+
+- High‑quality natural language output that feels conversational and empathetic.
+- External compute so the project does not host large language‑model infrastructure.
+
+6.3 How Gemini is used properly and safely
+
+- Backend‑only integration: The Gemini API is called only from the backend, keeping API keys secure.
+- Structured prompts: Prompts include only relevant, anonymized health metrics and risk outputs, and ask for brief assessments, concrete lifestyle steps, and guidance on when to see a doctor.
+- Error handling and fallbacks: If Gemini is unavailable or returns an error, the system falls back to rule‑based advice.
+- Strong disclaimers: Every AI‑generated advice block is suffixed with a clear statement that it is informational only and not medical advice.
+
+7. Overall Integration and Correct Usage
+
+The technologies used in HeartWise complement one another:
+
+- The React frontend provides a responsive, accessible UI with clear medical disclaimers.
+- The Node.js/Express backend validates inputs, orchestrates ML and LLM calls, and manages persistence using JSON‑friendly patterns.
+- The FastAPI ML microservice encapsulates model logic and exposes a clean prediction API.
+- The MySQL database stores user accounts and longitudinal prediction histories.
+- The Gemini integration adds contextual natural‑language advice under strict safety controls.
+
+Together, these choices produce a modular, maintainable, and medically cautious system that can be extended in future with additional risk factors, new visualizations, or enhanced advice prompts without requiring a complete rewrite of the technology stack.

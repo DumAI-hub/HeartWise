@@ -44,11 +44,18 @@ export default function HomePage() {
   };
 
   return (
-    <div className="homepage" style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <div
+      className="homepage"
+      style={{
+        minHeight: '100vh',
+        background: 'radial-gradient(circle at top, #0f172a 0%, #020617 45%, #000000 100%)',
+        color: '#e5e7eb'
+      }}
+    >
       <Navigation />
 
       {/* Hero Section */}
-      <section className="hero-modern">
+      <section className="hero-modern" style={{ paddingTop: '3rem', paddingBottom: '2.5rem' }}>
         <div className="hero-container">
           <div className="hero-content-wrapper">
             <div className="hero-badge">
@@ -68,6 +75,27 @@ export default function HomePage() {
               risk profile. Get instant assessments, personalized insights, and take control 
               of your heart health journey.
             </p>
+
+            {/* High-level disclaimer */}
+            <div
+              className="mt-4 text-sm"
+              style={{
+                maxWidth: '40rem',
+                background: 'rgba(15, 23, 42, 0.9)',
+                borderLeft: '4px solid #f97316',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem',
+                color: '#fde68a'
+              }}
+            >
+              <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Important note</strong>
+              <span>
+                HeartWise is intended for pre‑medical screening and general awareness only.
+                Results are based on statistical models and are not 100% accurate. Always consult
+                a qualified healthcare professional for diagnosis, interpretation of test results,
+                and treatment decisions.
+              </span>
+            </div>
             
             <div className="hero-cta">
               <button 
@@ -88,7 +116,7 @@ export default function HomePage() {
               )}
             </div>
             
-            <div className="hero-stats">
+            {/* <div className="hero-stats">
               <div className="stat-item">
                 <div className="stat-number">95%</div>
                 <div className="stat-label">Accuracy</div>
@@ -103,7 +131,7 @@ export default function HomePage() {
                 <div className="stat-number">24/7</div>
                 <div className="stat-label">Available</div>
               </div>
-            </div>
+            </div> */}
           </div>
           
           <div className="hero-visual-wrapper">
@@ -133,11 +161,11 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="features-modern">
+      <section className="features-modern" style={{ background: 'rgba(15,23,42,0.9)' }}>
         <div className="features-container">
           <div className="features-header">
-            <h2 className="features-title">Everything You Need</h2>
-            <p className="features-subtitle">
+            <h2 className="features-title" style={{ color: '#e5e7eb' }}>Everything You Need</h2>
+            <p className="features-subtitle" style={{ color: '#9ca3af' }}>
               Comprehensive cardiovascular health monitoring in one place
             </p>
           </div>
@@ -212,7 +240,13 @@ export default function HomePage() {
               <div className="step-number">1</div>
               <div className="step-content">
                 <h3>Enter Your Data</h3>
-                <p>Provide basic health parameters like age, blood pressure, and lifestyle factors</p>
+                <p>
+                  Provide basic health parameters like age, blood pressure, and lifestyle factors.
+                  If you have recent lab results, you can also enter your cholesterol and fasting
+                  blood sugar values (these usually come from a blood test done by a doctor or
+                  laboratory). If you are not sure of your exact values, choose the option that
+                  feels safest for you – for example, select the "Low" or lowerrisk category.
+                </p>
               </div>
             </div>
             <div className="step-connector"></div>
@@ -239,11 +273,11 @@ export default function HomePage() {
       <footer className="homepage-footer">
         <div className="footer-content">
           <div className="footer-brand">
-            <div className="footer-logo">❤️ CardioPredict</div>
+            <div className="footer-logo">❤️ HeartWise</div>
             <p className="footer-tagline">Your AI-powered heart health companion</p>
           </div>
           <div className="footer-info">
-            <p>© 2025 CardioPredict. Advanced cardiovascular risk assessment.</p>
+            <p>© 2025 HeartWise. Advanced cardiovascular risk assessment.</p>
           </div>
         </div>
       </footer>

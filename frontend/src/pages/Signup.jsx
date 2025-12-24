@@ -35,7 +35,7 @@ export default function Signup() {
       );
 
       if (response.data.success) {
-        navigate("/input");
+        navigate("/");
       } else {
         setError(response.data.message || "Signup failed");
       }
@@ -47,12 +47,11 @@ export default function Signup() {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--color-bg)',
       padding: 'var(--space-xl)'
     }}>
       <div style={{
@@ -69,7 +68,7 @@ export default function Signup() {
             padding: 'var(--space-sm) var(--space-md)',
             background: 'transparent',
             border: 'none',
-            color: 'var(--color-text-secondary)',
+            color: '#e5e7eb',
             fontFamily: 'var(--font-body)',
             fontSize: 'var(--text-sm)',
             fontWeight: '500',
@@ -81,7 +80,7 @@ export default function Signup() {
         </button>
 
         {/* Signup Card */}
-        <div className="classic-card" style={{ padding: 'var(--space-2xl)' }}>
+        <div className="classic-card" style={{ padding: 'var(--space-2xl)', backgroundColor: '#ffffff', color: '#111827' }}>
           {/* Header */}
           <div style={{ 
             textAlign: 'center', 
@@ -89,7 +88,7 @@ export default function Signup() {
             borderBottom: '2px solid var(--color-border)',
             paddingBottom: 'var(--space-lg)'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>❤️</div>
+            
             <h2 style={{
               fontFamily: 'var(--font-heading)',
               fontSize: 'var(--text-3xl)',
